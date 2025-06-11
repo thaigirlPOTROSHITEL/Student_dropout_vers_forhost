@@ -28,10 +28,11 @@ def load_models():
 
         # Магистратура
         model_mag = joblib.load('models/linear_model_nystroem_s_magistr_lof.joblib')
-        with open('models/linear_model_nystroem_s_magistr_lof_config.json', 'r') as f:
-            config_mag = json.load(f)
-        with open('models/linear_model_nystroem_s_magistr_lof_columns.pkl', 'rb') as f:
-            features_mag = pickle.load(f)
+        with open('models/linear_model_nystroem_s_magistr_lof_config.json', 'r') as n:
+            config_mag = json.load(n)
+        with open('models/linear_model_nystroem_s_magistr_lof_columns.pkl', 'rb') as n:
+            features_mag = pickle.load(n)
+            logger.info(f"mag {features_mag}")
         
 
         return (model_bak, config_bak['threshold'], features_bak,
@@ -84,6 +85,7 @@ def predict():
     if request.method == 'POST':
         try:
             education_level = request.form.get('education_level')
+            logger.info(f"{education_level}")
             logger.info(f"Обработка для уровня образования: {education_level}")
 
             # Если пришёл файл CSV
@@ -143,11 +145,21 @@ def download_results():
         return jsonify({'error': str(e)}), 500
 
 
-def collect_form_data(form: Dict, level: str) -> Dict:
-    """Собирает данные из формы в словарь с нужными фичами"""
-    data = {}
-    
+from collections import OrderedDict
 
+def collect_form_data(form: Dict, level: str) -> Dict:
+    """Собирает данные из формы в словарь с нужными фичами, сохраняя порядок колонок"""
+    
+    if level == 'magistr':
+        columns_order = MAG_FEATURES
+    else:  # bak_spec
+        columns_order = BAK_FEATURES
+    
+    data = OrderedDict()
+    
+    for col in columns_order:
+        data[col] = None 
+        
     data['Приоритет'] = int(form.get('priority', 1))
     data['Cумма баллов испытаний'] = int(form.get('exam_score', 0))
     data['Балл за инд. достижения'] = int(form.get('achievement', 0))
@@ -159,12 +171,11 @@ def collect_form_data(form: Dict, level: str) -> Dict:
     data['fromEkaterinburg'] = int(form.get('city', 0))
     data['fromSverdlovskRegion'] = int(form.get('region', 0))
     
-
     country = form.get('country', 'Российская Федерация')
     data['PostSoviet'] = 1 if country in ['Республика Беларусь', 'Республика Казахстан', 'Республика Армения', 
-                                         'Республика Азербайджан', 'Республика Молдова', 'Республика Узбекистан',
-                                         'Республика Таджикистан', 'Туркменистан', 'Киргизская Республика', 'Украина'] else 0
-    data['others'] = 1 if country not in ['Российская Федерация'] + ['Республика Беларусь', 'Республика Казахстан'] else 0
+                                        'Республика Азербайджан', 'Республика Молдова', 'Республика Узбекистан',
+                                        'Республика Таджикистан', 'Туркменистан', 'Киргизская Республика', 'Украина'] else 0
+    data['others'] = 1 if country not in ['Российская Федерация', 'Республика Беларусь', 'Республика Казахстан'] else 0
     
     competition = form.get('competition', 'Основные места')
     data['Особая квота'] = 1 if competition == 'Особая квота' else 0
@@ -190,7 +201,6 @@ def collect_form_data(form: Dict, level: str) -> Dict:
     data['Код направления 3: 3'] = 1 if direction.endswith('03') else 0
     data['Код направления 3: 4'] = 1 if direction.endswith('04') else 0
     
-
     if level == 'bak_spec':
         data['БВИ'] = int(form.get('bvi', 0))
         
@@ -206,6 +216,13 @@ def collect_form_data(form: Dict, level: str) -> Dict:
         data['Высшее'] = 1 if institution == 'Высшее' else 0
         data['Профильная Школа'] = 1 if institution == 'Профильная школа' else 0
         data['СПО'] = 1 if institution == 'СПО' else 0
+    else:  
+        data['всероссийская олимпиада школьников (ВОШ)'] = 0
+        data['олимпиада из перечня, утвержденного МОН РФ (ОШ)'] = 0
+        data['Военное уч. заведение'] = 0
+        data['Высшее'] = 1
+        data['Профильная Школа'] = 0
+        data['СПО'] = 0
     
     subject_prefix = 'b_' if level == 'bak_spec' else 'm_'
     subject_names = form.getlist(f'{subject_prefix}subject_name[]')
@@ -222,7 +239,7 @@ def collect_form_data(form: Dict, level: str) -> Dict:
         
         total_retakes += retakes
 
-        if grade in ['Незачёт', 'Недопуск', 'Недосдал', 'Неуважительная причина']:
+        if grade in ['Незачёт', 'Недопуск', 'Недосдал', 'Неуважительная причина', '2']:
             total_debts += 1
     
     data['Общее количество пересдач'] = total_retakes
@@ -230,14 +247,14 @@ def collect_form_data(form: Dict, level: str) -> Dict:
     
     data['Позиция студента в рейтинге'] = 0
     data['Human Development Index'] = 0
-    
+    logger.info(f"ghjn{data}")
     return data
 
 def prepare_data(df: pd.DataFrame, level: str) -> pd.DataFrame:
     if level == 'bak_spec':
-        required_features = list(model_bak.feature_names_in_)
+        required_features = features_bak
     else:
-        required_features = list(model_mag.feature_names_in_)
+        required_features = features_mag
 
     df_features = set(df.columns)
     model_features = set(required_features)
@@ -253,14 +270,12 @@ def prepare_data(df: pd.DataFrame, level: str) -> pd.DataFrame:
     if extra_in_df:
         logger.warning(f"В данных есть лишние признаки, не используемые моделью: {extra_in_df}")
 
-    # Приводим необходимые признаки к числовому типу, заполняем пропуски нулями
     for col in required_features:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         else:
             df[col] = 0
 
-    # Оставляем только необходимые признаки
     df = df[required_features]
 
     logger.info(f"Подготовленные признаки: {list(df.columns)}")
@@ -280,14 +295,11 @@ def make_prediction(df: pd.DataFrame, level: str) -> Dict:
     if missing:
         raise ValueError(f"Отсутствуют обязательные фичи: {missing}")
 
-    # Предсказание вероятности
     if hasattr(model, 'predict_proba'):
         proba = model.predict_proba(df[features])[:, 1]
     else:
-        # Если модель не поддерживает predict_proba, используем predict (регрессия)
         proba = model.predict(df[features])
 
-    # Если это несколько строк, усредняем
     if len(proba) > 1:
         probability = float(proba.mean())
     else:
