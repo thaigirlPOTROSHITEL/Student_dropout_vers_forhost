@@ -11,16 +11,8 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-<<<<<<< HEAD
-#фичи бак
-BAK_FEATURES = ['Приоритет', 'Cумма баллов испытаний', 'БВИ', 'Балл за инд. достижения', 'Контракт', 'Нуждается в общежитии', 'Иностранный абитуриент (МОН)', 'Пол', 'Полных лет на момент поступления', 'Общее количество пересдач', 'Общее количество долгов', 'fromEkaterinburg', 'fromSverdlovskRegion', 'Human Development Index', 'Особая квота', 'Отдельная квота', 'Целевая квота', 'всероссийская олимпиада школьников (ВОШ)', 'олимпиада из перечня, утвержденного МОН РФ (ОШ)', 'Заочная', 'Очно-заочная', 'Специалист', 'Военное уч. заведение', 'Высшее', 'Профильная Школа', 'СПО', 'Боевые действия', 'Инвалиды', 'Квота для иностранных граждан', 'Сироты', 'PostSoviet', 'others', 'Код направления 1: 10', 'Код направления 1: 11', 'Код направления 1: 27', 'Код направления 1: 29', 'Код направления 3: 2', 'Код направления 3: 3', 'Код направления 3: 4', 'Позиция студента в рейтинге']
-#фичи маг
-MAG_FEATURES = ['Приоритет', 'Cумма баллов испытаний', 'Балл за инд. достижения', 'Контракт', 'Нуждается в общежитии', 'Иностранный абитуриент (МОН)', 'Пол', 'Полных лет на момент поступления', 'Общее количество пересдач', 'Общее количество долгов', 'fromEkaterinburg', 'fromSverdlovskRegion', 'Human Development Index', 'Особая квота', 'Отдельная квота', 'Целевая квота', 'всероссийская олимпиада школьников (ВОШ)', 'олимпиада из перечня, утвержденного МОН РФ (ОШ)', 'Заочная', 'Очно-заочная', 'Военное уч. заведение', 'Высшее', 'Профильная Школа', 'СПО', 'Боевые действия', 'Инвалиды', 'Квота для иностранных граждан', 'Сироты', 'PostSoviet', 'others', 'Код направления 1: 10', 'Код направления 1: 11', 'Код направления 1: 27', 'Код направления 1: 29', 'Код направления 3: 2', 'Код направления 3: 3', 'Код направления 3: 4', 'Позиция студента в рейтинге']
-# Загрузка моделей из примера 
-=======
 
 
->>>>>>> 430b51768250cd1df778f58c53877bef493dc5d2
 def load_models():
     try:
         model_bak = joblib.load('models/rf_model_s_bak_spec_mah.joblib')
@@ -30,32 +22,20 @@ def load_models():
             features_bak = pickle.load(f)
 
         model_mag = joblib.load('models/linear_model_nystroem_s_magistr_lof.joblib')
-<<<<<<< HEAD
         with open('models/linear_model_nystroem_s_magistr_lof_config.json', 'r') as n:
             config_mag = json.load(n)
         with open('models/linear_model_nystroem_s_magistr_lof_columns.pkl', 'rb') as n:
             features_mag = pickle.load(n)
             logger.info(f"mag {features_mag}")
-        
-=======
-        with open('models/linear_model_nystroem_s_magistr_lof_config.json', 'r') as f:
-            config_mag = json.load(f)
-        with open('models/linear_model_nystroem_s_magistr_lof_columns.pkl', 'rb') as f:
-            features_mag = pickle.load(f)
->>>>>>> 430b51768250cd1df778f58c53877bef493dc5d2
 
-        return (model_bak, config_bak['threshold'], features_bak,
+        return (model_bak, config_bak['threshold'], features_bak_spec,
                 model_mag, config_mag['threshold'], features_mag)
 
     except Exception as e:
         logger.error(f"Ошибка загрузки моделей: {e}")
         raise
 
-<<<<<<< HEAD
-# Загрузка данных для ранга
-=======
 
->>>>>>> 430b51768250cd1df778f58c53877bef493dc5d2
 def load_rank_data():
     try:
         with open('models/subject_stats_magistr.pkl', 'rb') as f:
@@ -76,7 +56,7 @@ def load_rank_data():
 
 
 try:
-    (model_bak, threshold_bak, features_bak,
+    (model_bak, threshold_bak, features_bak_spec,
      model_mag, threshold_mag, features_mag) = load_models()
     stats_mag, penalties_mag, stats_bak, penalties_bak = load_rank_data()
 except Exception as e:
@@ -163,16 +143,16 @@ def download_results():
         return jsonify({'error': str(e)}), 500
 
 
-<<<<<<< HEAD
 from collections import OrderedDict
+
 
 def collect_form_data(form: Dict, level: str) -> Dict:
     """Собирает данные из формы в словарь с нужными фичами, сохраняя порядок колонок"""
     
     if level == 'magistr':
-        columns_order = MAG_FEATURES
+        columns_order = features_mag
     else:  # bak_spec
-        columns_order = BAK_FEATURES
+        columns_order = features_bak_spec
     
     data = OrderedDict()
     
@@ -257,27 +237,6 @@ def collect_form_data(form: Dict, level: str) -> Dict:
         retakes = int(subject_retakes[i])
         
         total_retakes += retakes
-=======
-def collect_form_data(form: Dict, level: str) -> Dict:
-    features = features_bak if level == 'bak_spec' else features_mag
-    data = {}
-
-    for feature in features:
-        value = form.get(feature, 0)
-
-        if value in ['on', 'off']:
-            value = 1 if value == 'on' else 0
-
-        try:
-            if '.' in str(value):
-                value = float(value)
-            else:
-                value = int(value)
-
-        except:
-            pass
-        data[feature] = value
->>>>>>> 430b51768250cd1df778f58c53877bef493dc5d2
 
         if grade in ['Незачёт', 'Недопуск', 'Недосдал', 'Неуважительная причина', '2']:
             total_debts += 1
@@ -293,7 +252,7 @@ def collect_form_data(form: Dict, level: str) -> Dict:
 
 def prepare_data(df: pd.DataFrame, level: str) -> pd.DataFrame:
     if level == 'bak_spec':
-        required_features = features_bak
+        required_features = features_bak_spec
     else:
         required_features = features_mag
 
@@ -326,7 +285,7 @@ def prepare_data(df: pd.DataFrame, level: str) -> pd.DataFrame:
 
 def make_prediction(df: pd.DataFrame, level: str) -> Dict:
     if level == 'bak_spec':
-        model, threshold, features = model_bak, threshold_bak, features_bak
+        model, threshold, features = model_bak, threshold_bak, features_bak_spec
     else:
         model, threshold, features = model_mag, threshold_mag, features_mag
 
