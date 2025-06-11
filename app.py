@@ -11,37 +11,51 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+<<<<<<< HEAD
 #фичи бак
 BAK_FEATURES = ['Приоритет', 'Cумма баллов испытаний', 'БВИ', 'Балл за инд. достижения', 'Контракт', 'Нуждается в общежитии', 'Иностранный абитуриент (МОН)', 'Пол', 'Полных лет на момент поступления', 'Общее количество пересдач', 'Общее количество долгов', 'fromEkaterinburg', 'fromSverdlovskRegion', 'Human Development Index', 'Особая квота', 'Отдельная квота', 'Целевая квота', 'всероссийская олимпиада школьников (ВОШ)', 'олимпиада из перечня, утвержденного МОН РФ (ОШ)', 'Заочная', 'Очно-заочная', 'Специалист', 'Военное уч. заведение', 'Высшее', 'Профильная Школа', 'СПО', 'Боевые действия', 'Инвалиды', 'Квота для иностранных граждан', 'Сироты', 'PostSoviet', 'others', 'Код направления 1: 10', 'Код направления 1: 11', 'Код направления 1: 27', 'Код направления 1: 29', 'Код направления 3: 2', 'Код направления 3: 3', 'Код направления 3: 4', 'Позиция студента в рейтинге']
 #фичи маг
 MAG_FEATURES = ['Приоритет', 'Cумма баллов испытаний', 'Балл за инд. достижения', 'Контракт', 'Нуждается в общежитии', 'Иностранный абитуриент (МОН)', 'Пол', 'Полных лет на момент поступления', 'Общее количество пересдач', 'Общее количество долгов', 'fromEkaterinburg', 'fromSverdlovskRegion', 'Human Development Index', 'Особая квота', 'Отдельная квота', 'Целевая квота', 'всероссийская олимпиада школьников (ВОШ)', 'олимпиада из перечня, утвержденного МОН РФ (ОШ)', 'Заочная', 'Очно-заочная', 'Военное уч. заведение', 'Высшее', 'Профильная Школа', 'СПО', 'Боевые действия', 'Инвалиды', 'Квота для иностранных граждан', 'Сироты', 'PostSoviet', 'others', 'Код направления 1: 10', 'Код направления 1: 11', 'Код направления 1: 27', 'Код направления 1: 29', 'Код направления 3: 2', 'Код направления 3: 3', 'Код направления 3: 4', 'Позиция студента в рейтинге']
 # Загрузка моделей из примера 
+=======
+
+
+>>>>>>> 430b51768250cd1df778f58c53877bef493dc5d2
 def load_models():
     try:
-        # Бакалавриат/специалитет
         model_bak = joblib.load('models/rf_model_s_bak_spec_mah.joblib')
-
         with open('models/rf_model_s_bak_spec_mah_config.json', 'r') as f:
             config_bak = json.load(f)
         with open('models/rf_model_s_bak_spec_mah_columns.pkl', 'rb') as f:
             features_bak = pickle.load(f)
 
-        # Магистратура
         model_mag = joblib.load('models/linear_model_nystroem_s_magistr_lof.joblib')
+<<<<<<< HEAD
         with open('models/linear_model_nystroem_s_magistr_lof_config.json', 'r') as n:
             config_mag = json.load(n)
         with open('models/linear_model_nystroem_s_magistr_lof_columns.pkl', 'rb') as n:
             features_mag = pickle.load(n)
             logger.info(f"mag {features_mag}")
         
+=======
+        with open('models/linear_model_nystroem_s_magistr_lof_config.json', 'r') as f:
+            config_mag = json.load(f)
+        with open('models/linear_model_nystroem_s_magistr_lof_columns.pkl', 'rb') as f:
+            features_mag = pickle.load(f)
+>>>>>>> 430b51768250cd1df778f58c53877bef493dc5d2
 
         return (model_bak, config_bak['threshold'], features_bak,
                 model_mag, config_mag['threshold'], features_mag)
+
     except Exception as e:
         logger.error(f"Ошибка загрузки моделей: {e}")
         raise
 
+<<<<<<< HEAD
 # Загрузка данных для ранга
+=======
+
+>>>>>>> 430b51768250cd1df778f58c53877bef493dc5d2
 def load_rank_data():
     try:
         with open('models/subject_stats_magistr.pkl', 'rb') as f:
@@ -55,11 +69,12 @@ def load_rank_data():
             penalties_bak = pickle.load(f)
 
         return stats_mag, penalties_mag, stats_bak, penalties_bak
+
     except Exception as e:
         logger.error(f"Ошибка загрузки данных рангов: {e}")
         raise
 
-# Инициализация
+
 try:
     (model_bak, threshold_bak, features_bak,
      model_mag, threshold_mag, features_mag) = load_models()
@@ -68,17 +83,21 @@ except Exception as e:
     logger.critical(f"Ошибка инициализации: {e}")
     exit(1)
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/about')
 def about():
     return render_template('about.html')
 
+
 @app.route('/team')
 def team():
     return render_template('team.html')
+
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
@@ -88,16 +107,13 @@ def predict():
             logger.info(f"{education_level}")
             logger.info(f"Обработка для уровня образования: {education_level}")
 
-            # Если пришёл файл CSV
             if 'file' in request.files:
                 file = request.files['file']
                 if file.filename != '':
                     df = pd.read_csv(file)
-                    # Добавляем колонку с уровнем образования, если нужно
                     df['education_level'] = education_level
                     return process_csv(df, education_level)
 
-            # Обработка формы вручную
             form_data = collect_form_data(request.form, education_level)
             logger.info(f"data{form_data}")
             df = pd.DataFrame([form_data])
@@ -118,8 +134,8 @@ def predict():
 
     return render_template('prediction.html', show_results=False, error=None)
 
+
 def process_csv(df: pd.DataFrame, education_level: str):
-    """Обрабатывает CSV и возвращает результат"""
     try:
         df_prepared = prepare_data(df, education_level)
         result = make_prediction(df_prepared, education_level)
@@ -130,8 +146,10 @@ def process_csv(df: pd.DataFrame, education_level: str):
                                probability=result['probability'],
                                recommendation=result['recommendation'],
                                error=None)
+
     except Exception as e:
         raise ValueError(f"Ошибка обработки CSV: {e}")
+
 
 @app.route('/download_results')
 def download_results():
@@ -145,6 +163,7 @@ def download_results():
         return jsonify({'error': str(e)}), 500
 
 
+<<<<<<< HEAD
 from collections import OrderedDict
 
 def collect_form_data(form: Dict, level: str) -> Dict:
@@ -238,6 +257,27 @@ def collect_form_data(form: Dict, level: str) -> Dict:
         retakes = int(subject_retakes[i])
         
         total_retakes += retakes
+=======
+def collect_form_data(form: Dict, level: str) -> Dict:
+    features = features_bak if level == 'bak_spec' else features_mag
+    data = {}
+
+    for feature in features:
+        value = form.get(feature, 0)
+
+        if value in ['on', 'off']:
+            value = 1 if value == 'on' else 0
+
+        try:
+            if '.' in str(value):
+                value = float(value)
+            else:
+                value = int(value)
+
+        except:
+            pass
+        data[feature] = value
+>>>>>>> 430b51768250cd1df778f58c53877bef493dc5d2
 
         if grade in ['Незачёт', 'Недопуск', 'Недосдал', 'Неуважительная причина', '2']:
             total_debts += 1
@@ -249,6 +289,7 @@ def collect_form_data(form: Dict, level: str) -> Dict:
     data['Human Development Index'] = 0
     logger.info(f"ghjn{data}")
     return data
+
 
 def prepare_data(df: pd.DataFrame, level: str) -> pd.DataFrame:
     if level == 'bak_spec':
@@ -283,9 +324,7 @@ def prepare_data(df: pd.DataFrame, level: str) -> pd.DataFrame:
     return df
 
 
-
 def make_prediction(df: pd.DataFrame, level: str) -> Dict:
-    """Делает предсказание на основе модели"""
     if level == 'bak_spec':
         model, threshold, features = model_bak, threshold_bak, features_bak
     else:
@@ -311,8 +350,8 @@ def make_prediction(df: pd.DataFrame, level: str) -> Dict:
 
     return {'probability': probability, 'recommendation': recommendation}
 
+
 def save_results(df: pd.DataFrame, result: Dict):
-    """Сохраняет результаты в CSV"""
     df_copy = df.copy()
     df_copy['Вероятность'] = result['probability']
     df_copy['Рекомендация'] = result['recommendation']
