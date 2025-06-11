@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прогнозирование отсева студентов</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Главная</a></li>
+                <li><a href="{{ url_for('about') }}">О проекте</a></li>
+                <li><a href="{{ url_for('predict') }}">Прогнозирование</a></li>
+                <li><a href="{{ url_for('team') }}">О команде</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="prediction-section">
+            <h1>Сервис прогнозирования отсева студентов</h1>
+
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="magistr">Магистратура</button>
+                <button class="tab-btn" data-tab="bak_spec">Бакалавриат/Специалитет</button>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form active" id="magistr-form">
+                <input type="hidden" name="education_level" value="magistr">
+                <div class="form-section">
+                    <h2>Основные данные</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="m_priority">Приоритет (1-10):</label>
+                            <input type="number" id="m_priority" name="priority" min="1" max="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_exam_score">Сумма баллов испытаний (0-150):</label>
+                            <input type="number" id="m_exam_score" name="exam_score" min="0" max="150" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_achievement">Балл за инд. достижения (0-50):</label>
+                            <input type="number" id="m_achievement" name="achievement" min="0" max="50" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="m_contract">Основа освоения:</label>
+                            <select id="m_contract" name="contract" required>
+                                <option value="0">Бюджет</option>
+                                <option value="1">Контракт</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_dormitory">Нуждается в общежитии:</label>
+                            <select id="m_dormitory" name="dormitory" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_foreign">Иностранный абитуриент (МОН):</label>
+                            <select id="m_foreign" name="foreign" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="m_gender">Пол:</label>
+                            <select id="m_gender" name="gender" required>
+                                <option value="0">Женский</option>
+                                <option value="1">Мужской</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_age">Полных лет на момент поступления (15-100):</label>
+                            <input type="number" id="m_age" name="age" min="15" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_region">Гражданство. Область - Свердловская область:</label>
+                            <select id="m_region" name="region" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="m_city">Гражданство. Город - Екатеринбург:</label>
+                            <select id="m_city" name="city" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_country">Гражданство. Страна:</label>
+                            <select id="m_country" name="country" required>
+                                <option value="Российская Федерация">Российская Федерация</option>
+                                <option value="Арабская Республика Египет">Арабская Республика Египет</option>
+                                <option value="Габонская Республика">Габонская Республика</option>
+                                <option value="Йеменская Республика">Йеменская Республика</option>
+                                <option value="Киргизская Республика">Киргизская Республика</option>
+                                <option value="Китайская Народная Республика">Китайская Народная Республика</option>
+                                <option value="Королевство Марокко">Королевство Марокко</option>
+                                <option value="Народная Республика Бангладеш">Народная Республика Бангладеш</option>
+                                <option value="Республика Азербайджан">Республика Азербайджан</option>
+                                <option value="Республика Армения">Республика Армения</option>
+                                <option value="Республика Беларусь">Республика Беларусь</option>
+                                <option value="Республика Гаити">Республика Гаити</option>
+                                <option value="Республика Индонезия">Республика Индонезия</option>
+                                <option value="Республика Ирак">Республика Ирак</option>
+                                <option value="Республика Казахстан">Республика Казахстан</option>
+                                <option value="Республика Камерун">Республика Камерун</option>
+                                <option value="Республика Колумбия">Республика Колумбия</option>
+                                <option value="Республика Кот д'Ивуар">Республика Кот д'Ивуар</option>
+                                <option value="Республика Куба">Республика Куба</option>
+                                <option value="Республика Молдова">Республика Молдова</option>
+                                <option value="Республика Перу">Республика Перу</option>
+                                <option value="Республика Судан">Республика Судан</option>
+                                <option value="Республика Таджикистан">Республика Таджикистан</option>
+                                <option value="Республика Узбекистан">Республика Узбекистан</option>
+                                <option value="Сирийская Арабская Республика">Сирийская Арабская Республика</option>
+                                <option value="Социалистическая Республика Вьетнам">Социалистическая Республика Вьетнам</option>
+                                <option value="Турецкая Республика">Турецкая Республика</option>
+                                <option value="Туркменистан">Туркменистан</option>
+                                <option value="Украина">Украина</option>
+                                <option value="Федеративная Демократическая Республика Эфиопия">Федеративная Демократическая Республика Эфиопия</option>
+                                <option value="Федеративная Республика Бразилия">Федеративная Республика Бразилия</option>
+                                <option value="Федеративная Республика Германия">Федеративная Республика Германия</option>
+                                <option value="Федеративная Республика Нигерия">Федеративная Республика Нигерия</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="m_competition">Вид конкурса:</label>
+                            <select id="m_competition" name="competition" required>
+                                <option value="Основные места">Основные места</option>
+                                <option value="Особая квота">Особая квота</option>
+                                <option value="Отдельная квота">Отдельная квота</option>
+                                <option value="Целевая квота">Целевая квота</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_form">Форма освоения:</label>
+                            <select id="m_form" name="form" required>
+                                <option value="Очная">Очная</option>
+                                <option value="Заочная">Заочная</option>
+                                <option value="Очно-заочная">Очно-заочная</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="m_benefit">Льгота:</label>
+                            <select id="m_benefit" name="benefit" required>
+                                <option value="Нет">Нет</option>
+                                <option value="Боевые действия">Всё что связано с боевыми действиями</option>
+                                <option value="Инвалиды">Инвалидность</option>
+                                <option value="Квота для иностранных граждан">Квота для иностранных граждан</option>
+                                <option value="Сироты">Сирота</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="m_direction">Код направления (АА.ВВ.СС):</label>
+                            <input type="text" id="m_direction" name="direction" pattern="\d{2}\.\d{2}\.\d{2}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Дисциплины <button type="button" class="btn btn-secondary" id="m_add-subject">+ Добавить предмет</button></h2>
+                    <div id="m_subjects_container">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Прогнозировать</button>
+                </div>
+            </form>
+
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form" id="bak_spec-form">
+                <input type="hidden" name="education_level" value="bak_spec">
+
+                <div class="form-section">
+                    <h2>Основные данные</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="b_priority">Приоритет (1-8):</label>
+                            <input type="number" id="b_priority" name="priority" min="1" max="8" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_exam_score">Сумма баллов испытаний (0-300):</label>
+                            <input type="number" id="b_exam_score" name="exam_score" min="0" max="300" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_achievement">Балл за инд. достижения (0-10):</label>
+                            <input type="number" id="b_achievement" name="achievement" min="0" max="10" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="b_bvi">БВИ:</label>
+                            <select id="b_bvi" name="bvi" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_contract">Основа освоения:</label>
+                            <select id="b_contract" name="contract" required>
+                                <option value="0">Бюджет</option>
+                                <option value="1">Контракт</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_dormitory">Нуждается в общежитии:</label>
+                            <select id="b_dormitory" name="dormitory" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="b_foreign">Иностранный абитуриент (МОН):</label>
+                            <select id="b_foreign" name="foreign" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_gender">Пол:</label>
+                            <select id="b_gender" name="gender" required>
+                                <option value="0">Женский</option>
+                                <option value="1">Мужской</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_age">Полных лет на момент поступления (15-100):</label>
+                            <input type="number" id="b_age" name="age" min="15" max="100" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="b_region">Гражданство. Область - Свердловская область:</label>
+                            <select id="b_region" name="region" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_city">Гражданство. Город - Екатеринбург:</label>
+                            <select id="b_city" name="city" required>
+                                <option value="0">Нет</option>
+                                <option value="1">Да</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_country">Гражданство. Страна:</label>
+                            <select id="b_country" name="country" required>
+                                <option value="Российская Федерация">Российская Федерация</option>
+                                <option value="Арабская Республика Египет">Арабская Республика Египет</option>
+                                <option value="Габонская Республика">Габонская Республика</option>
+                                <option value="Йеменская Республика">Йеменская Республика</option>
+                                <option value="Киргизская Республика">Киргизская Республика</option>
+                                <option value="Китайская Народная Республика">Китайская Народная Республика</option>
+                                <option value="Королевство Марокко">Королевство Марокко</option>
+                                <option value="Народная Республика Бангладеш">Народная Республика Бангладеш</option>
+                                <option value="Республика Азербайджан">Республика Азербайджан</option>
+                                <option value="Республика Армения">Республика Армения</option>
+                                <option value="Республика Беларусь">Республика Беларусь</option>
+                                <option value="Республика Гаити">Республика Гаити</option>
+                                <option value="Республика Индонезия">Республика Индонезия</option>
+                                <option value="Республика Ирак">Республика Ирак</option>
+                                <option value="Республика Казахстан">Республика Казахстан</option>
+                                <option value="Республика Камерун">Республика Камерун</option>
+                                <option value="Республика Колумбия">Республика Колумбия</option>
+                                <option value="Республика Кот д'Ивуар">Республика Кот д'Ивуар</option>
+                                <option value="Республика Куба">Республика Куба</option>
+                                <option value="Республика Молдова">Республика Молдова</option>
+                                <option value="Республика Перу">Республика Перу</option>
+                                <option value="Республика Судан">Республика Судан</option>
+                                <option value="Республика Таджикистан">Республика Таджикистан</option>
+                                <option value="Республика Узбекистан">Республика Узбекистан</option>
+                                <option value="Сирийская Арабская Республика">Сирийская Арабская Республика</option>
+                                <option value="Социалистическая Республика Вьетнам">Социалистическая Республика Вьетнам</option>
+                                <option value="Турецкая Республика">Турецкая Республика</option>
+                                <option value="Туркменистан">Туркменистан</option>
+                                <option value="Украина">Украина</option>
+                                <option value="Федеративная Демократическая Республика Эфиопия">Федеративная Демократическая Республика Эфиопия</option>
+                                <option value="Федеративная Республика Бразилия">Федеративная Республика Бразилия</option>
+                                <option value="Федеративная Республика Германия">Федеративная Республика Германия</option>
+                                <option value="Федеративная Республика Нигерия">Федеративная Республика Нигерия</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="b_competition">Вид конкурса:</label>
+                            <select id="b_competition" name="competition" required>
+                                <option value="Основные места">Основные места</option>
+                                <option value="Особая квота">Особая квота</option>
+                                <option value="Отдельная квота">Отдельная квота</option>
+                                <option value="Целевая квота">Целевая квота</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_olympiad">Тип олимпиады:</label>
+                            <select id="b_olympiad" name="olympiad" required>
+                                <option value="Не писал">Не писал</option>
+                                <option value="ВОШ">ВОШ</option>
+                                <option value="ОШ">ОШ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_form">Форма освоения:</label>
+                            <select id="b_form" name="form" required>
+                                <option value="Очная">Очная</option>
+                                <option value="Заочная">Заочная</option>
+                                <option value="Очно-заочная">Очно-заочная</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="b_level">Уровень подготовки:</label>
+                            <select id="b_level" name="level" required>
+                                <option value="Бакалавр">Бакалавр</option>
+                                <option value="Специалист">Специалист</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_institution">Тип законченного учреждения:</label>
+                            <select id="b_institution" name="institution" required>
+                                <option value="Школа">Школа</option>
+                                <option value="Военное учебное заведение">Военное учебное заведение</option>
+                                <option value="Высшее">Высшее</option>
+                                <option value="Профильная школа">Профильная школа</option>
+                                <option value="СПО">СПО</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="b_benefit">Льгота:</label>
+                            <select id="b_benefit" name="benefit" required>
+                                <option value="Нет">Нет</option>
+                                <option value="Боевые действия">Всё что связано с боевыми действиями</option>
+                                <option value="Инвалиды">Инвалидность</option>
+                                <option value="Квота для иностранных граждан">Квота для иностранных граждан</option>
+                                <option value="Сироты">Сирота</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="b_direction">Код направления (АА.ВВ.СС):</label>
+                            <input type="text" id="b_direction" name="direction" pattern="\d{2}\.\d{2}\.\d{2}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Дисциплины <button type="button" class="btn btn-secondary" id="b_add_subject">+ Добавить предмет</button></h2>
+                    <div id="b_subjects_container">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Прогнозировать</button>
+                    <button type="button" class="btn btn-secondary" id="b_download_sample">Скачать пример CSV</button>
+                    <label class="btn btn-secondary">
+                        Загрузить CSV <input type="file" id="b_csv_upload" name="file" accept=".csv" style="display: none;">
+                    </label>
+                </div>
+            </form>
+
+            {% if error %}
+            <div class="error-message">
+                <p>Ошибка: {{ error }}</p>
+            </div>
+            {% endif %}
+
+            {% if show_results %}
+            <div class="results-section">
+                <h2>Результаты прогнозирования</h2>
+                <div class="result-card">
+                    <h3>Вероятность отсева: <span class="probability">{{ probability }}%</span></h3>
+                    <p class="recommendation">{{ recommendation }}</p>
+                </div>
+                <div class="results-actions">
+                    <a href="{{ url_for('download_results') }}" class="btn btn-secondary">Скачать полный отчет</a>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

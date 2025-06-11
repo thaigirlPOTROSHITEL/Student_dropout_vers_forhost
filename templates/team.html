@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+   <html lang="ru">
+   <head>
+       <meta charset="UTF-8">
+       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>О команде - Прогнозирование отсева студентов</title>
+       <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+   </head>
+   <body>
+       <header>
+           <nav>
+               <ul>
+                   <li><a href="{{ url_for('index') }}">Главная</a></li>
+                   <li><a href="{{ url_for('about') }}">О проекте</a></li>
+                   <li><a href="{{ url_for('predict') }}">Прогнозирование</a></li>
+                   <li><a href="{{ url_for('team') }}">О команде</a></li>
+               </ul>
+           </nav>
+       </header>
+
+       <main>
+           <section class="team-section">
+               <h1>Наша команда</h1>
+               
+               <div class="team-members">
+                   <div class="member-card">
+                       <img src="{{ url_for('static', filename='images/vladislav.jpg') }}" alt="Владислав Калашников" class="member-photo">
+                       <h3>Владислав Калашников</h3>
+                       <p class="position">Специалист по машинному обучению</p>
+                       <p class="bio">Разработчик моделей машинного обучения для образовательных систем.</p>
+                   </div>
+                   
+                   <div class="member-card">
+                       <img src="{{ url_for('static', filename='images/evgenia.jpg') }}" alt="Евгения Петрова" class="member-photo">
+                       <h3>Евгения Петрова</h3>
+                       <p class="position">Аналитик</p>
+                       <p class="bio">Специалист по анализу данных для образовательных проектов.</p>
+                   </div>
+                   
+                   <div class="member-card">
+                       <img src="{{ url_for('static', filename='images/sergey.jpg') }}" alt="Тимофей Серегин" class="member-photo">
+                       <h3>Тимофей Серегин</h3>
+                       <p class="position">Веб-разработчик</p>
+                       <p class="bio">Создатель интерфейсов для систем анализа данных.</p>
+                   </div>
+                   
+                   <div class="member-card">
+                       <img src="{{ url_for('static', filename='images/dmitry.jpg') }}" alt="Дмитрий Колотыгин" class="member-photo">
+                       <h3>Дмитрий Колотыгин</h3>
+                       <p class="position">Специалист по машинному обучению</p>
+                       <p class="bio">Разработчик алгоритмов для прогнозирования данных.</p>
+                   </div>
+                   
+                   <div class="member-card">
+                       <img src="{{ url_for('static', filename='images/taisiya.jpg') }}" alt="Таисия Певная" class="member-photo">
+                       <h3>Таисия Певная</h3>
+                       <p class="position">Веб-разработчик</p>
+                       <p class="bio">Специалист по созданию пользовательских интерфейсов.</p>
+                   </div>
+               </div>
+               
+               <div class="contact-info">
+                   <h2>Контактная информация</h2>
+                   <p><strong>Email:</strong> skynet_help@mail.ru</p>
+                   <p><strong>Адрес:</strong> г.Екатеринбург, ул.Мира, д.32</p>
+               </div>
+           </section>
+       </main>
+
+       <footer>
+           <p>© 2025 Система прогнозирования отсева студентов. Все права защищены.</p>
+       </footer>
+   </body>
+   </html>

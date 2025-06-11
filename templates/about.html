@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>О проекте - Прогнозирование отсева студентов</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Главная</a></li>
+                <li><a href="{{ url_for('about') }}">О проекте</a></li>
+                <li><a href="{{ url_for('predict') }}">Прогнозирование</a></li>
+                <li><a href="{{ url_for('team') }}">О команде</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="about-section">
+            <h1>О проекте</h1>
+            
+            <article>
+                <h2>Назначение системы</h2>
+                <p>Наша система предназначена для прогнозирования вероятности отсева студентов на основе их академических показателей, социально-демографических характеристик и других факторов.</p>
+            </article>
+
+            <article>
+                <h2>Как это работает?</h2>
+                <p>Система использует алгоритмы машинного обучения для анализа данных студентов:</p>
+                <ul>
+                    <li>Модель для бакалавриата/специалитета</li>
+                    <li>Модель для магистратуры</li>
+                </ul>
+                <p>Каждая модель была обучена на исторических данных и показывает высокую точность прогнозирования.</p>
+            </article>
+
+            <article>
+                <h2>Преимущества</h2>
+                <div class="advantages">
+                    <div class="advantage-card">
+                        <h3>Точность</h3>
+                        <p>Точность прогнозирования до 87%</p>
+                    </div>
+                    <div class="advantage-card">
+                        <h3>Простота</h3>
+                        <p>Интуитивно понятный интерфейс</p>
+                    </div>
+                    <div class="advantage-card">
+                        <h3>Гибкость</h3>
+                        <p>Работа с разными форматами данных</p>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Система прогнозирования отсева студентов. Все права защищены.</p>
+    </footer>
+</body>
+</html>
