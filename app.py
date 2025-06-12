@@ -2,6 +2,7 @@
 from flask import Flask, render_template, request, send_file, jsonify
 import pandas as pd
 import logging
+import uuid
 
 from app_func import load_models, load_rank_data, make_prediction, save_results
 from csv_func import collect_form_data, prepare_data
