@@ -149,7 +149,7 @@ from collections import OrderedDict
 def collect_form_data(form: Dict, level: str) -> Dict:
     """Собирает данные из формы в словарь с нужными фичами, сохраняя порядок колонок"""
 
-    logger.info(f"ghjn{form}")
+    logger.info(f"form {form}")
 
     if level == 'magistr':
         columns_order = features_mag

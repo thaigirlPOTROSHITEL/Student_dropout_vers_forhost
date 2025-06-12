@@ -59,10 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="number" name="${prefix}_subject_retakes[]" min="0" max="50" required>
                 </div>
 
-                <div class="form-group">
-                    <label>Долги (0-50):</label>
-                    <input type="number" name="${prefix}_subject_debts[]" min="0" max="50" required>
-                </div>
             </div>
             <button type="button" class="btn-remove-subject" data-id="${subjectId}">×</button>
         `;
