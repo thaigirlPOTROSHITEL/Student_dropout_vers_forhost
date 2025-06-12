@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const GRADES = ['5', '4', '3', '2', 'Зачёт', 'Незачёт', 'Недопуск', 'Недосдал', 'Неуважительная причина'];
 
+    // Управление вкладками
     const tabButtons = document.querySelectorAll('.tab-btn');
     tabButtons.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Добавление предметов
     document.getElementById('m_add-subject').addEventListener('click', () => {
         addSubject('m', MAGISTR_SUBJECTS);
     });
@@ -58,7 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label>Пересдачи (0-50):</label>
                     <input type="number" name="${prefix}_subject_retakes[]" min="0" max="50" required>
                 </div>
-
             </div>
             <button type="button" class="btn-remove-subject" data-id="${subjectId}">×</button>
         `;
@@ -66,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(subjectDiv);
     }
 
+    // Удаление предметов
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('btn-remove-subject')) {
             const subjectId = e.target.dataset.id;
@@ -76,11 +78,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Активация первой вкладки
     const firstTab = document.querySelector('.tab-btn');
     if (firstTab) {
         firstTab.click();
     }
 
+    // Валидация форм
     const forms = document.querySelectorAll('.prediction-form');
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
@@ -133,24 +137,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Обработка загрузки CSV
+    document.getElementById('b_csv_upload_btn').addEventListener('click', function() {
+        document.getElementById('b_csv_upload').click();
+    });
+
     document.getElementById('b_csv_upload').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const contents = e.target.result;
-                // Здесь можно добавить обработку CSV файла
-                console.log('Загружен CSV файл:', file.name);
-            };
-            reader.readAsText(file);
+            document.getElementById('bak_spec-form').submit();
         }
     });
 
-    // Обработка скачивания примера CSV
-    document.getElementById('b_download_sample').addEventListener('click', function() {
-        // Здесь можно добавить код для скачивания примера CSV
-        console.log('Запрошен пример CSV файла');
-        alert('Пример CSV файла будет скачан');
+    document.getElementById('m_csv_upload_btn').addEventListener('click', function() {
+        document.getElementById('m_csv_upload').click();
     });
+
+    document.getElementById('m_csv_upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('magistr-form').submit();
+        }
+    });
+
+    document.getElementById('m_download_sample').addEventListener('click', function() {
+    const csvContent = "id,priority,exam_score,achievement,contract,dormitory,foreign,gender,age,region,city,country,competition,form,benefit,direction,subject_name,subject_grade,subject_score,subject_retakes\n" +
+                      "1,1,150,10,0,0,0,1,22,1,1,Российская Федерация,Основные места,Очная,Нет,01.02.03,Математические основы искусственного интеллекта,5,90,0\n" +
+                      "1,1,150,10,0,0,0,1,22,1,1,Российская Федерация,Основные места,Очная,Нет,01.02.03,Программирование на Python,4,80,1\n" +
+                      "2,2,140,8,1,0,1,0,23,0,0,Республика Беларусь,Основные места,Очная,Нет,01.02.03,Машинное обучение,3,70,0\n" +
+                      "2,2,140,8,1,0,1,0,23,0,0,Республика Беларусь,Основные места,Очная,Нет,01.02.03,Вэб-технологии в бизнесе,4,75,2";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'magistr_example.csv';
+    link.click();
+});
 });

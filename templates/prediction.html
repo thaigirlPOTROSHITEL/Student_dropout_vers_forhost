@@ -185,6 +185,11 @@
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Прогнозировать</button>
                 </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="b_download_sample">Скачать пример CSV</button>
+                    <button type="button" class="btn btn-secondary" id="b_csv_upload_btn">Загрузить CSV</button>
+                    <input type="file" id="b_csv_upload" name="file" accept=".csv" style="display: none;">
+                </div>
             </form>
 
             <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form" id="bak_spec-form">
@@ -382,10 +387,11 @@
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Прогнозировать</button>
-                    <button type="button" class="btn btn-secondary" id="b_download_sample">Скачать пример CSV</button>
-                    <label class="btn btn-secondary">
-                        Загрузить CSV <input type="file" id="b_csv_upload" name="file" accept=".csv" style="display: none;">
-                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="m_download_sample">Скачать пример CSV</button>
+                    <button type="button" class="btn btn-secondary" id="m_csv_upload_btn">Загрузить CSV</button>
+                    <input type="file" id="m_csv_upload" name="file" accept=".csv" style="display: none;">
                 </div>
             </form>
 
