@@ -20,8 +20,8 @@ app.add_middleware(
 )
 
 try:
-    model_magistr = joblib.load('models/dec_tree_model_magistr_greate.pkl')
-    model_bak_spec = joblib.load('models/dec_tree_model_bak_spec_greate.pkl')
+    model_magistr = joblib.load('models/linear_model_nystroem_s_magistr_lof.joblib')
+    model_bak_spec = joblib.load('models/rf_model_s_bak_spec_mah.joblib')
     logger.info("Модели успешно загружены")
 except Exception as e:
     logger.error(f"Ошибка загрузки моделей: {str(e)}")
@@ -45,9 +45,11 @@ FEATURE_COLUMNS = [
        'Код направления 3: 2', 'Код направления 3: 3', 'Код направления 3: 4'
 ]
 
+
 class PredictionRequest(BaseModel):
     education_level: str
     data: list[dict]
+
 
 @app.get("/")
 async def root():
@@ -59,9 +61,11 @@ async def root():
         }
     }
 
+
 @app.get("/test")
 async def test_endpoint():
     return {"status": "API работает корректно", "models_loaded": True}
+
 
 @app.get("/predict")
 async def predict_get():
@@ -72,6 +76,7 @@ async def predict_get():
             "data": [{col: 0 for col in FEATURE_COLUMNS}]
         }
     }
+
 
 @app.post("/predict")
 async def predict(request: PredictionRequest):
@@ -116,6 +121,7 @@ async def predict(request: PredictionRequest):
             status_code=500,
             detail=f"Ошибка обработки: {str(e)}"
         )
+
 
 if __name__ == '__main__':
     import uvicorn
