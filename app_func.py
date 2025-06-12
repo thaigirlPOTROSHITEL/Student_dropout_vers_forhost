@@ -52,10 +52,6 @@ def load_rank_data():
 
 
 def make_prediction(df: pd.DataFrame, model, threshold, features) -> Dict:
-    # if level == 'bak_spec':
-    #     model, threshold, features = model_bak, threshold_bak, features_bak_spec
-    # else:
-    #     model, threshold, features = model_mag, threshold_mag, features_mag
 
     missing = set(features) - set(df.columns)
     if missing:
