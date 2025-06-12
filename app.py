@@ -19,7 +19,7 @@ def load_models():
         with open('models/rf_model_s_bak_spec_mah_config.json', 'r') as f:
             config_bak = json.load(f)
         with open('models/rf_model_s_bak_spec_mah_columns.pkl', 'rb') as f:
-            features_bak = pickle.load(f)
+            features_bak_spec = pickle.load(f)
 
         model_mag = joblib.load('models/linear_model_nystroem_s_magistr_lof.joblib')
         with open('models/linear_model_nystroem_s_magistr_lof_config.json', 'r') as n:
