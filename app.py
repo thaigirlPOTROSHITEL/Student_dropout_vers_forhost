@@ -148,7 +148,9 @@ from collections import OrderedDict
 
 def collect_form_data(form: Dict, level: str) -> Dict:
     """Собирает данные из формы в словарь с нужными фичами, сохраняя порядок колонок"""
-    
+
+    logger.info(f"ghjn{form}")
+
     if level == 'magistr':
         columns_order = features_mag
     else:  # bak_spec
@@ -158,7 +160,8 @@ def collect_form_data(form: Dict, level: str) -> Dict:
     
     for col in columns_order:
         data[col] = None 
-        
+
+
     data['Приоритет'] = int(form.get('priority', 1))
     data['Cумма баллов испытаний'] = int(form.get('exam_score', 0))
     data['Балл за инд. достижения'] = int(form.get('achievement', 0))
