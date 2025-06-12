@@ -67,11 +67,11 @@ def make_prediction(df: pd.DataFrame, model, threshold, features) -> Dict:
     else:
         probability = float(proba[0])
 
-    recommendation = "Рекомендуется" if probability >= threshold else "Не рекомендуется"
+    recommendation = "Прогноз: студент отсеется" if probability >= threshold else "Прогноз: студент не отсеется"
 
     logger.info(f"Вероятность: {probability}, решение: {recommendation}")
 
-    return {'probability': probability, 'recommendation': recommendation}
+    return {'probability': round(probability * 100, 2), 'recommendation': recommendation}
 
 
 def save_results(df: pd.DataFrame, result: Dict):
