@@ -90,9 +90,43 @@ def predict():
             if 'file' in request.files:
                 file = request.files['file']
                 if file.filename != '':
-                    df = pd.read_csv(file)
-                    df['education_level'] = education_level
-                    return process_csv(df, education_level)
+                    try:
+                        encodings = ['utf-8', 'cp1251', 'latin1', 'iso-8859-1']
+                        df = None
+                        
+                        for encoding in encodings:
+                            try:
+                                file.seek(0)
+                                df = pd.read_csv(file, encoding=encoding)
+                                break
+                            except UnicodeDecodeError:
+                                continue
+                        
+                        if df is None:
+                            raise ValueError("Не удалось прочитать файл. Пожалуйста, убедитесь, что файл сохранен в кодировке UTF-8 или Windows-1251")
+                        
+                        df['education_level'] = education_level
+                        df_prepared = prepare_data(df, education_level)
+                        result = make_prediction(df_prepared, education_level)
+                        
+                        results_df = pd.DataFrame({
+                            'id_студента': df['id_студента'],
+                            'Вероятность': result['probability'],
+                            'Рекомендация': result['recommendation']
+                        })
+                        
+                        results_df.to_csv('results.csv', index=False)
+                        
+                        return send_file('results.csv',
+                                      mimetype='text/csv',
+                                      as_attachment=True,
+                                      download_name='predictions.csv')
+
+                    except Exception as e:
+                        logger.error(f"Ошибка при обработке файла: {e}")
+                        return render_template('prediction.html',
+                                            show_results=False,
+                                            error=f"Ошибка обработки файла: {str(e)}")
 
             form_data = collect_form_data(request.form, education_level)
             logger.info(f"data{form_data}")
@@ -115,22 +149,6 @@ def predict():
     return render_template('prediction.html', show_results=False, error=None)
 
 
-def process_csv(df: pd.DataFrame, education_level: str):
-    try:
-        df_prepared = prepare_data(df, education_level)
-        result = make_prediction(df_prepared, education_level)
-        save_results(df_prepared, result)
-
-        return render_template('prediction.html',
-                               show_results=True,
-                               probability=result['probability'],
-                               recommendation=result['recommendation'],
-                               error=None)
-
-    except Exception as e:
-        raise ValueError(f"Ошибка обработки CSV: {e}")
-
-
 @app.route('/download_results')
 def download_results():
     try:
@@ -147,13 +165,11 @@ from collections import OrderedDict
 
 
 def collect_form_data(form: Dict, level: str) -> Dict:
-    """Собирает данные из формы в словарь с нужными фичами, сохраняя порядок колонок"""
-
     logger.info(f"ghjn{form}")
 
     if level == 'magistr':
         columns_order = features_mag
-    else:  # bak_spec
+    else:
         columns_order = features_bak_spec
     
     data = OrderedDict()
@@ -161,10 +177,9 @@ def collect_form_data(form: Dict, level: str) -> Dict:
     for col in columns_order:
         data[col] = None 
 
-
     data['Приоритет'] = int(form.get('priority', 1))
-    data['Cумма баллов испытаний'] = int(form.get('exam_score', 0))
-    data['Балл за инд. достижения'] = int(form.get('achievement', 0))
+    data['Сумма баллов испытаний'] = int(form.get('exam_score', 0))
+    data['Балл за индивидуальные достижения'] = int(form.get('achievement', 0))
     data['Контракт'] = int(form.get('contract', 0))
     data['Нуждается в общежитии'] = int(form.get('dormitory', 0))
     data['Иностранный абитуриент (МОН)'] = int(form.get('foreign', 0))
@@ -259,31 +274,106 @@ def prepare_data(df: pd.DataFrame, level: str) -> pd.DataFrame:
     else:
         required_features = features_mag
 
-    df_features = set(df.columns)
-    model_features = set(required_features)
-
-    missing_in_df = model_features - df_features
-    extra_in_df = df_features - model_features
-
-    if missing_in_df:
-        error_msg = f"В данных отсутствуют признаки, нужные модели: {missing_in_df}"
-        logger.error(error_msg)
-        raise ValueError(error_msg)
-
-    if extra_in_df:
-        logger.warning(f"В данных есть лишние признаки, не используемые моделью: {extra_in_df}")
-
-    for col in required_features:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    if 'id_студента' in df.columns:
+        result_df = pd.DataFrame()
+        
+        result_df['Приоритет'] = df['Приоритет']
+        result_df['Cумма баллов испытаний'] = df['Сумма баллов испытаний']
+        result_df['Балл за инд. достижения'] = df['Балл за индивидуальные достижения']
+        result_df['Контракт'] = df['Основа освоения']
+        result_df['Нуждается в общежитии'] = df['Нуждается в общежитии']
+        result_df['Иностранный абитуриент (МОН)'] = df['Иностранный абитуриент (МОН)']
+        result_df['Пол'] = df['Пол']
+        result_df['Полных лет на момент поступления'] = df['Полных лет на момент поступления']
+        result_df['fromEkaterinburg'] = df['Гражданство. Город - Екатеринбург']
+        result_df['fromSverdlovskRegion'] = df['Гражданство. Область - Свердловская область']
+        
+        result_df['PostSoviet'] = df['Гражданство. Страна'].apply(lambda x: 1 if x in [
+            'Республика Беларусь', 'Республика Казахстан', 'Республика Армения', 
+            'Республика Азербайджан', 'Республика Молдова', 'Республика Узбекистан',
+            'Республика Таджикистан', 'Туркменистан', 'Киргизская Республика', 'Украина'
+        ] else 0)
+        result_df['others'] = df['Гражданство. Страна'].apply(lambda x: 1 if x not in [
+            'Российская Федерация', 'Республика Беларусь', 'Республика Казахстан'
+        ] else 0)
+        
+        result_df['Особая квота'] = df['Вид конкурса'].apply(lambda x: 1 if x == 'Особая квота' else 0)
+        result_df['Отдельная квота'] = df['Вид конкурса'].apply(lambda x: 1 if x == 'Отдельная квота' else 0)
+        result_df['Целевая квота'] = df['Вид конкурса'].apply(lambda x: 1 if x == 'Целевая квота' else 0)
+        
+        result_df['Заочная'] = df['Форма освоения'].apply(lambda x: 1 if x == 'Заочная' else 0)
+        result_df['Очно-заочная'] = df['Форма освоения'].apply(lambda x: 1 if x == 'Очно-заочная' else 0)
+        
+        result_df['Боевые действия'] = df['Льгота'].apply(lambda x: 1 if x == 'Боевые действия' else 0)
+        result_df['Инвалиды'] = df['Льгота'].apply(lambda x: 1 if x == 'Инвалиды' else 0)
+        result_df['Квота для иностранных граждан'] = df['Льгота'].apply(lambda x: 1 if x == 'Квота для иностранных граждан' else 0)
+        result_df['Сироты'] = df['Льгота'].apply(lambda x: 1 if x == 'Сироты' else 0)
+        
+        result_df['Код направления 1: 10'] = df['Код направления'].apply(lambda x: 1 if str(x).startswith('10') else 0)
+        result_df['Код направления 1: 11'] = df['Код направления'].apply(lambda x: 1 if str(x).startswith('11') else 0)
+        result_df['Код направления 1: 27'] = df['Код направления'].apply(lambda x: 1 if str(x).startswith('27') else 0)
+        result_df['Код направления 1: 29'] = df['Код направления'].apply(lambda x: 1 if str(x).startswith('29') else 0)
+        result_df['Код направления 3: 2'] = df['Код направления'].apply(lambda x: 1 if str(x).endswith('02') else 0)
+        result_df['Код направления 3: 3'] = df['Код направления'].apply(lambda x: 1 if str(x).endswith('03') else 0)
+        result_df['Код направления 3: 4'] = df['Код направления'].apply(lambda x: 1 if str(x).endswith('04') else 0)
+        
+        if level == 'bak_spec':
+            result_df['БВИ'] = df['БВИ'] if 'БВИ' in df.columns else 0
+            result_df['всероссийская олимпиада школьников (ВОШ)'] = df['всероссийская олимпиада школьников (ВОШ)'] if 'всероссийская олимпиада школьников (ВОШ)' in df.columns else 0
+            result_df['олимпиада из перечня, утвержденного МОН РФ (ОШ)'] = df['олимпиада из перечня утвержденного МОН РФ (ОШ)'] if 'олимпиада из перечня утвержденного МОН РФ (ОШ)' in df.columns else 0
+            result_df['Специалист'] = df['Специалист'] if 'Специалист' in df.columns else 0
+            result_df['Военное уч. заведение'] = df['Военное уч. заведение'] if 'Военное уч. заведение' in df.columns else 0
+            result_df['Высшее'] = df['Высшее'] if 'Высшее' in df.columns else 1
+            result_df['Профильная Школа'] = df['Профильная Школа'] if 'Профильная Школа' in df.columns else 0
+            result_df['СПО'] = df['СПО'] if 'СПО' in df.columns else 0
         else:
-            df[col] = 0
+            result_df['БВИ'] = df['БВИ'] if 'БВИ' in df.columns else 0
+            result_df['всероссийская олимпиада школьников (ВОШ)'] = df['всероссийская олимпиада школьников (ВОШ)'] if 'всероссийская олимпиада школьников (ВОШ)' in df.columns else 0
+            result_df['олимпиада из перечня, утвержденного МОН РФ (ОШ)'] = df['олимпиада из перечня утвержденного МОН РФ (ОШ)'] if 'олимпиада из перечня утвержденного МОН РФ (ОШ)' in df.columns else 0
+            result_df['Специалист'] = df['Специалист'] if 'Специалист' in df.columns else 0
+            result_df['Военное уч. заведение'] = df['Военное уч. заведение'] if 'Военное уч. заведение' in df.columns else 0
+            result_df['Высшее'] = df['Высшее'] if 'Высшее' in df.columns else 1
+            result_df['Профильная Школа'] = df['Профильная Школа'] if 'Профильная Школа' in df.columns else 0
+            result_df['СПО'] = df['СПО'] if 'СПО' in df.columns else 0
+        
+        result_df['Общее количество пересдач'] = df['Количество пересдач']
+        result_df['Общее количество долгов'] = df['Оценка'].apply(lambda x: 1 if x in ['2', 'Незачёт', 'Недопуск', 'Недосдал', 'Неуважительная причина'] else 0)
+        result_df['Позиция студента в рейтинге'] = 0
+        result_df['Human Development Index'] = 0
+        
+        missing_features = set(required_features) - set(result_df.columns)
+        if missing_features:
+            raise ValueError(f"В данных отсутствуют признаки, нужные модели: {missing_features}")
+        
+        result_df = result_df[required_features]
+        
+        return result_df
+    else:
+        df_features = set(df.columns)
+        model_features = set(required_features)
 
-    df = df[required_features]
+        missing_in_df = model_features - df_features
+        extra_in_df = df_features - model_features
 
-    logger.info(f"Подготовленные признаки: {list(df.columns)}")
+        if missing_in_df:
+            error_msg = f"В данных отсутствуют признаки, нужные модели: {missing_in_df}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
-    return df
+        if extra_in_df:
+            logger.warning(f"В данных есть лишние признаки, не используемые моделью: {extra_in_df}")
+
+        for col in required_features:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            else:
+                df[col] = 0
+
+        df = df[required_features]
+
+        logger.info(f"Подготовленные признаки: {list(df.columns)}")
+
+        return df
 
 
 def make_prediction(df: pd.DataFrame, level: str) -> Dict:
@@ -314,10 +404,19 @@ def make_prediction(df: pd.DataFrame, level: str) -> Dict:
 
 
 def save_results(df: pd.DataFrame, result: Dict):
-    df_copy = df.copy()
-    df_copy['Вероятность'] = result['probability']
-    df_copy['Рекомендация'] = result['recommendation']
-    df_copy.to_csv('results.csv', index=False)
+    if 'id_студента' in df.columns:
+        results_df = pd.DataFrame({
+            'id_студента': df['id_студента'],
+            'Вероятность': result['probability'],
+            'Рекомендация': result['recommendation']
+        })
+    else:
+        df_copy = df.copy()
+        df_copy['Вероятность'] = result['probability']
+        df_copy['Рекомендация'] = result['recommendation']
+        results_df = df_copy
+    
+    results_df.to_csv('results.csv', index=False)
 
 
 if __name__ == '__main__':
