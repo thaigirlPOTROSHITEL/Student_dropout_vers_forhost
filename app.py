@@ -5,7 +5,7 @@ import logging
 import uuid
 
 from app_func import load_models, load_rank_data, make_prediction, save_results
-from csv_func import collect_form_data, prepare_data
+from csv_func import collect_form_data, prepare_data, calculate_student_ranks
 
 
 app = Flask(__name__)
@@ -149,32 +149,27 @@ def process_student_csv(df: pd.DataFrame, education_level: str, model, threshold
                     "subject_retakes": row.get("subject_retakes", 0)
                 })
             
-            student_data[f"{'m_' if education_level == 'magistr' else 'b_'}_subject_name[]"] = [s["subject_name"] for s in subjects]
-            student_data[f"{'m_' if education_level == 'magistr' else 'b_'}_subject_grade[]"] = [s["subject_grade"] for s in subjects]
-            student_data[f"{'m_' if education_level == 'magistr' else 'b_'}_subject_score[]"] = [s["subject_score"] for s in subjects]
-            student_data[f"{'m_' if education_level == 'magistr' else 'b_'}_subject_retakes[]"] = [s["subject_retakes"] for s in subjects]
+                student_data[f"{'m_' if education_level == 'magistr' else 'b_'}_subject_name[]"] = [s["subject_name"] for s in subjects]
             
-            form_data = collect_form_data(student_data, education_level, features_mag, features_bak_spec)
-            df_student = pd.DataFrame([form_data])
-            df_prepared = prepare_data(df_student, education_level, features_mag, features_bak_spec)
             
-            result = make_prediction(df_prepared, model, threshold, features)
+                form_data = collect_form_data(student_data, education_level, features_mag, features_bak_spec)
+                df_student = pd.DataFrame([form_data])
+                df_prepared = prepare_data(df_student, education_level, features_mag, features_bak_spec)
             
-            results.append({
-                'id': student_id,
-                'probability': result['probability'],
-                'recommendation': result['recommendation'],
-                **student_data  
-            })
+                result = make_prediction(df_prepared, model, threshold, features)
+            
+                results.append({
+                    'id': student_id,
+                    'probability': result['probability'],
+                    'recommendation': result['recommendation'],
+                    **student_data  
+                })
         
         results_df = pd.DataFrame(results)
         results_df.to_csv('results.csv', index=False)
         
-        first_result = results[0] if results else {}
         return render_template('prediction.html',
                            show_results=True,
-                           probability=first_result.get('probability', 0),
-                           recommendation=first_result.get('recommendation', ''),
                            error=None)
 
     except Exception as e:
