@@ -37,11 +37,20 @@ def team():
     return render_template('team.html')
 
 
+import io
+from werkzeug.datastructures import FileStorage
+
+
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
     if request.method == 'POST':
         try:
             education_level = request.form.get('education_level')
+            if not education_level:
+                return render_template('prediction.html',
+                                       show_results=False,
+                                       error="Не указан уровень образования")
+
             logger.info(f"Обработка для уровня образования: {education_level}")
 
             if education_level == 'bak_spec':
@@ -52,27 +61,77 @@ def predict():
             if 'file' in request.files:
                 file = request.files['file']
                 if file.filename != '':
-                    df = pd.read_csv(file)
-                    return process_student_csv(df, education_level, model, threshold, features)
+                    try:
+                        encodings = ['utf-8', 'cp1251', 'latin1', 'iso-8859-1']
+                        df = None
+                        for encoding in encodings:
+                            try:
+                                file.seek(0)
+                                df = pd.read_csv(io.StringIO(file.read().decode(encoding)))
+                                break
+                            except UnicodeDecodeError:
+                                continue
+
+                        if df is None:
+                            raise ValueError("Не удалось прочитать файл. Проверьте кодировку")
+
+                        if education_level == 'magistr':
+                            df['Уровень подготовки'] = 'Магистр'
+                        else:
+                            df['Уровень подготовки'] = 'Бакалавр'
+
+                        ranks = calculate_student_ranks(df)
+                        df['Позиция студента в рейтинге'] = df['UUID студента'].map(ranks)
+                        df['education_level'] = education_level
+
+                        df_prepared = prepare_data(df, education_level, features_mag, features_bak_spec)
+                        result = make_prediction(df_prepared, model, threshold, features)
+
+                        output = io.StringIO()
+                        results_df = pd.DataFrame({
+                            'id_студента': df['id_студента'],
+                            'Вероятность': result['probability'],
+                            'Рекомендация': result['recommendation']
+                        })
+                        results_df.to_csv(output, index=False)
+
+                        mem = io.BytesIO()
+                        mem.write(output.getvalue().encode('utf-8'))
+                        mem.seek(0)
+
+                        return send_file(
+                            mem,
+                            mimetype='text/csv',
+                            as_attachment=True,
+                            download_name='predictions.csv'
+                        )
+
+                    except Exception as e:
+                        logger.error(f"Ошибка при обработке файла: {e}")
+                        return render_template('prediction.html',
+                                               show_results=False,
+                                               error=f"Ошибка обработки файла: {str(e)}")
 
             form_data = collect_form_data(request.form, education_level, features_mag, features_bak_spec)
             df = pd.DataFrame([form_data])
             df_prepared = prepare_data(df, education_level, features_mag, features_bak_spec)
+
             result = make_prediction(df_prepared, model, threshold, features)
 
             return render_template('prediction.html',
-                               show_results=True,
-                               probability=result['probability'],
-                               recommendation=result['recommendation'],
-                               error=None)
+                                   show_results=True,
+                                   probability=result['probability'][0],
+                                   recommendation=result['recommendation'][0],
+                                   error=None)
 
         except Exception as e:
-            logger.error(f"Ошибка при обработке запроса: {e}", exc_info=True)
+            logger.error(f"Непредвиденная ошибка: {e}")
             return render_template('prediction.html',
-                               show_results=False,
-                               error=f"Ошибка обработки: {e}")
+                                   show_results=False,
+                                   error=f"Произошла непредвиденная ошибка: {str(e)}")
 
     return render_template('prediction.html', show_results=False, error=None)
+
 
 def process_student_csv(df: pd.DataFrame, education_level: str, model, threshold, features):
     try:
@@ -123,6 +182,18 @@ def process_student_csv(df: pd.DataFrame, education_level: str, model, threshold
         return render_template('prediction.html',
                            show_results=False,
                            error=f"Ошибка обработки CSV: {e}")
+
+
+def make_prediction(df_prepared, model, threshold, features):
+    probabilities = model.predict_proba(df_prepared[features])[:, 1]
+    recommendations = [
+        'Рекомендован' if prob >= threshold else 'Не рекомендован'
+        for prob in probabilities
+    ]
+    return {
+        'probability': probabilities,
+        'recommendation': recommendations
+    }
 
 
 @app.route('/download_results')

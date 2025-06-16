@@ -52,7 +52,6 @@ def load_rank_data():
 
 
 def make_prediction(df: pd.DataFrame, model, threshold, features) -> Dict:
-
     missing = set(features) - set(df.columns)
     if missing:
         raise ValueError(f"Отсутствуют обязательные фичи: {missing}")
