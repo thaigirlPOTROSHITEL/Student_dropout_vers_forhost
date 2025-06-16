@@ -184,8 +184,6 @@
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Прогнозировать</button>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('m_csv_upload').click()">Загрузить CSV</button>
-                    <input type="file" id="m_csv_upload" name="file" accept=".csv" style="display: none;">
                 </div>
             </form>
 
@@ -384,8 +382,10 @@
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Прогнозировать</button>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('b_csv_upload').click()">Загрузить CSV</button>
-                    <input type="file" id="b_csv_upload" name="file" accept=".csv" style="display: none;">
+                    <button type="button" class="btn btn-secondary" id="b_download_sample">Скачать пример CSV</button>
+                    <label class="btn btn-secondary">
+                        Загрузить CSV <input type="file" id="b_csv_upload" name="file" accept=".csv" style="display: none;">
+                    </label>
                 </div>
             </form>
 

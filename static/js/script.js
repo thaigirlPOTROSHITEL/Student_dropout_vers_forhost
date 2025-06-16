@@ -138,16 +138,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Обработка загрузки CSV
-    const csvUploads = document.querySelectorAll('input[type="file"]');
-    csvUploads.forEach(upload => {
-        upload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const form = this.closest('form');
-                if (form) {
-                    form.submit();
-                }
-            }
-        });
+    document.getElementById('b_csv_upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const contents = e.target.result;
+                // Здесь можно добавить обработку CSV файла
+                console.log('Загружен CSV файл:', file.name);
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    // Обработка скачивания примера CSV
+    document.getElementById('b_download_sample').addEventListener('click', function() {
+        // Здесь можно добавить код для скачивания примера CSV
+        console.log('Запрошен пример CSV файла');
+        alert('Пример CSV файла будет скачан');
     });
 });
