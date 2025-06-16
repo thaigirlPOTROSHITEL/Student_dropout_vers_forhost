@@ -93,7 +93,7 @@ def predict():
                         logger.error(f"RESULT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: {result}")
 
                         output = io.StringIO()
-                        result.to_csv(output, index=False)
+                        result.to_csv(output, index=False, sep=';')
 
                         mem = io.BytesIO()
                         mem.write(output.getvalue().encode('utf-8'))
