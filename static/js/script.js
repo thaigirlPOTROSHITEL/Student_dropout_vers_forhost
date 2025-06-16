@@ -113,6 +113,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function() {
+        const fileInputs = this.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            input.value = '';
+        });
+    });
+});
 
     const firstTab = document.querySelector('.tab-btn');
     if (firstTab) {
