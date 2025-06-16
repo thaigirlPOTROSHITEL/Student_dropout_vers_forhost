@@ -295,3 +295,17 @@ footer {
         flex-direction: column;
     }
 }
+
+.subject-select {
+    width: 300px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .subject-select {
+        width: 200px;
+    }
+}

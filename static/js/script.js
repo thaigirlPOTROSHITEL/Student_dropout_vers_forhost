@@ -33,39 +33,73 @@ document.addEventListener('DOMContentLoaded', function() {
         const subjectDiv = document.createElement('div');
         subjectDiv.className = 'subject-entry';
         subjectDiv.dataset.id = subjectId;
-        subjectDiv.innerHTML = `
-            <div class="subject-fields">
-                <div class="form-group">
-                    <label>Дисциплина:</label>
-                    <select name="${prefix}_subject_name[]" required>
-                        ${subjectsList.map(s => `<option value="${s}">${s}</option>`).join('')}
-                    </select>
-                </div>
 
-                <div class="form-group">
-                    <label>Оценка:</label>
-                    <select name="${prefix}_subject_grade[]" required>
-                        ${GRADES.map(g => `<option value="${g}">${g}</option>`).join('')}
-                    </select>
-                </div>
+        const subjectFields = document.createElement('div');
+        subjectFields.className = 'subject-fields';
 
-                <div class="form-group">
-                    <label>Баллы (0-100):</label>
-                    <input type="number" name="${prefix}_subject_score[]" min="0" max="100" required>
-                </div>
+        const createFormGroup = (labelText, elementType, name, options = null) => {
+            const group = document.createElement('div');
+            group.className = 'form-group';
 
-                <div class="form-group">
-                    <label>Пересдачи (0-50):</label>
-                    <input type="number" name="${prefix}_subject_retakes[]" min="0" max="50" required>
-                </div>
+            const label = document.createElement('label');
+            label.textContent = labelText;
+            group.appendChild(label);
 
-                <div class="form-group">
-                    <label>Долги (0-50):</label>
-                    <input type="number" name="${prefix}_subject_debts[]" min="0" max="50" required>
-                </div>
-            </div>
-            <button type="button" class="btn-remove-subject" data-id="${subjectId}">×</button>
-        `;
+            let element;
+            if (elementType === 'select') {
+                element = document.createElement('select');
+                element.name = name;
+                element.required = true;
+                element.className = 'subject-select'; // Добавляем класс для стилизации
+
+                if (options) {
+                    options.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        element.appendChild(optionElement);
+                    });
+                }
+            } else {
+                element = document.createElement('input');
+                element.type = elementType;
+                element.name = name;
+                element.required = true;
+
+                if (elementType === 'number') {
+                    element.min = name.includes('score') ? '0' : '0';
+                    element.max = name.includes('score') ? '100' : '50';
+                }
+            }
+
+            group.appendChild(element);
+            return group;
+        };
+
+        subjectFields.appendChild(
+            createFormGroup('Дисциплина:', 'select', `${prefix}_subject_name[]`, subjectsList)
+        );
+
+        subjectFields.appendChild(
+            createFormGroup('Оценка:', 'select', `${prefix}_subject_grade[]`, GRADES)
+        );
+
+        subjectFields.appendChild(
+            createFormGroup('Баллы (0-100):', 'number', `${prefix}_subject_score[]`)
+        );
+
+        subjectFields.appendChild(
+            createFormGroup('Пересдачи (0-50):', 'number', `${prefix}_subject_retakes[]`)
+        );
+
+        subjectDiv.appendChild(subjectFields);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-remove-subject';
+        removeBtn.dataset.id = subjectId;
+        removeBtn.textContent = '×';
+        subjectDiv.appendChild(removeBtn);
 
         container.appendChild(subjectDiv);
     }
@@ -137,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Обработка загрузки CSV
     const csvUploads = document.querySelectorAll('input[type="file"]');
     csvUploads.forEach(upload => {
         upload.addEventListener('change', function(e) {
