@@ -80,13 +80,6 @@ def power_penalty_score(student_scores, subject_stats, p=2.0):
 
 
 def calculate_student_ranks(df):
-    """
-    Принимает DataFrame с данными студентов и возвращает словарь:
-    {
-        "UUID студента": ранг студента
-    }
-    """
-
     def sep_dataset_local(df):
         bak_spec_mask = df["Уровень подготовки"].isin(["Бакалавр", "Специалист"])
         magistr_mask = df["Уровень подготовки"] == "Магистр"
@@ -97,13 +90,13 @@ def calculate_student_ranks(df):
     def group_students(df):
         student_groups = {}
         for _, row in df.iterrows():
-            student = row["UUID студента"]
+            student = row["id_студента"]
             subject = row["Наименование дисциплины"]
-            if pd.isna(row["Балл"]):
+            if pd.isna(row["Баллы"]):
                 grade = row["Оценка"]
                 score = IS_NA.get(grade, 0)
             else:
-                score = row["Балл"]
+                score = row["Баллы"]
             if student not in student_groups:
                 student_groups[student] = {}
             student_groups[student][subject] = score
@@ -204,6 +197,30 @@ def collect_form_data(form: Dict, education_level: str, features_mag, features_b
     student_uuid = str(uuid.uuid4())
     student_level = 'Магистр' if education_level == 'magistr' else ('Специалист' if data.get('Специалист', 0) else 'Бакалавр')
 
+    if student_level in ('Специалист', 'Бакалавр'):
+        data['БВИ'] = int(form.get('bvi', 0))
+
+        level = form.get('level', 'Бакалавр')
+        data['Специалист'] = 0 if level == 'Бакалавр' else 1
+
+        olympiads = form.get('Тип олимпиады', 'Не писал')
+        data['всероссийская олимпиада школьников (ВОШ)'] = 1 if olympiads == 'всероссийская олимпиада школьников (ВОШ)' else 0
+        data['олимпиада из перечня, утвержденного МОН РФ (ОШ)'] = 1 if olympiads == 'олимпиада из перечня, утвержденного МОН РФ (ОШ)' else 0
+
+        pre = form.get('Тип законченного учреждения', 'Школа')
+        data['Военное уч. заведение'] = 1 if pre == 'Военное уч. заведение' else 0
+        data['Высшее'] = 1 if pre == 'Высшее' else 0
+        data['Профильная Школа'] = 1 if pre == 'Профильная Школа' else 0
+        data['СПО'] = 1 if pre == 'СПО' else 0
+    else:
+        data['всероссийская олимпиада школьников (ВОШ)'] = 0
+        data['олимпиада из перечня, утвержденного МОН РФ (ОШ)'] = 0
+
+        data['Военное уч. заведение'] = 0
+        data['Высшее'] = 1
+        data['Профильная Школа'] = 0
+        data['СПО'] = 0
+
     rows = []
     for i in range(len(subject_names)):
         grade = subject_grades[i] if i < len(subject_grades) else ''
@@ -215,11 +232,11 @@ def collect_form_data(form: Dict, education_level: str, features_mag, features_b
             pass
 
         rows.append({
-            "UUID студента": student_uuid,
+            "id_студента": student_uuid,
             "Уровень подготовки": student_level,
             "Наименование дисциплины": subject_names[i],
             "Оценка": grade,
-            "Балл": score_val
+            "Баллы": score_val
         })
 
     df_student = pd.DataFrame(rows)

@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, send_file, jsonify
 import pandas as pd
 import logging
 import uuid
+from werkzeug.datastructures import ImmutableMultiDict
 
 from app_func import load_models, load_rank_data, make_prediction, save_results
 from csv_func import collect_form_data, prepare_data, calculate_student_ranks
@@ -67,7 +68,7 @@ def predict():
                         for encoding in encodings:
                             try:
                                 file.seek(0)
-                                df = pd.read_csv(io.StringIO(file.read().decode(encoding)))
+                                df = pd.read_csv(io.StringIO(file.read().decode(encoding)), sep=';')
                                 break
                             except UnicodeDecodeError:
                                 continue
@@ -75,25 +76,24 @@ def predict():
                         if df is None:
                             raise ValueError("Не удалось прочитать файл. Проверьте кодировку")
 
+                        logger.error(f"Ошибка при обработке файла: {df}")
+
                         if education_level == 'magistr':
                             df['Уровень подготовки'] = 'Магистр'
                         else:
                             df['Уровень подготовки'] = 'Бакалавр'
 
-                        ranks = calculate_student_ranks(df)
-                        df['Позиция студента в рейтинге'] = df['UUID студента'].map(ranks)
-                        df['education_level'] = education_level
-
+                        df = process_student_csv(df, education_level, features_mag, features_bak_spec)
                         df_prepared = prepare_data(df, education_level, features_mag, features_bak_spec)
-                        result = make_prediction(df_prepared, model, threshold, features)
+
+                        logger.info(f"DATASET: {df_prepared}")
+
+                        result = make_prediction_csv(df_prepared, model, threshold, features)
+
+                        logger.error(f"RESULT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: {result}")
 
                         output = io.StringIO()
-                        results_df = pd.DataFrame({
-                            'id_студента': df['id_студента'],
-                            'Вероятность': result['probability'],
-                            'Рекомендация': result['recommendation']
-                        })
-                        results_df.to_csv(output, index=False)
+                        result.to_csv(output, index=False)
 
                         mem = io.BytesIO()
                         mem.write(output.getvalue().encode('utf-8'))
@@ -120,8 +120,8 @@ def predict():
 
             return render_template('prediction.html',
                                    show_results=True,
-                                   probability=result['probability'][0],
-                                   recommendation=result['recommendation'][0],
+                                   probability=result['probability'],
+                                   recommendation=result['recommendation'],
                                    error=None)
 
         except Exception as e:
@@ -133,62 +133,78 @@ def predict():
     return render_template('prediction.html', show_results=False, error=None)
 
 
-def process_student_csv(df: pd.DataFrame, education_level: str, model, threshold, features):
+def process_student_csv(df: pd.DataFrame, education_level: str, features_mag, features_bak_spec):
     try:
-        student_groups = df.groupby('id')
-        
-        results = []
+        column_mapping = {
+            'Наименование дисциплины': 'subject_name',
+            'Оценка': 'subject_grade',
+            'Баллы': 'subject_score',
+            'Количество пересдач': 'subject_retakes'
+        }
+        df = df.rename(columns=column_mapping)
+
+        student_groups = df.groupby('id_студента')
+        processed_data = []
+
         for student_id, group in student_groups:
             student_data = group.iloc[0].to_dict()
-            subjects = []
+
+            prefix = 'm_' if education_level == 'magistr' else 'b_'
+            subjects = {
+                f"{prefix}subject_name[]": [],
+                f"{prefix}subject_grade[]": [],
+                f"{prefix}subject_score[]": [],
+                f"{prefix}subject_retakes[]": []
+            }
+
             for _, row in group.iterrows():
-                subjects.append({
-                    "subject_name": row.get("subject_name", ""),
-                    "subject_grade": row.get("subject_grade", ""),
-                    "subject_score": row.get("subject_score", ""),
-                    "subject_retakes": row.get("subject_retakes", 0)
-                })
-            
-                student_data[f"{'m_' if education_level == 'magistr' else 'b_'}_subject_name[]"] = [s["subject_name"] for s in subjects]
-            
-            
-                form_data = collect_form_data(student_data, education_level, features_mag, features_bak_spec)
-                df_student = pd.DataFrame([form_data])
-                df_prepared = prepare_data(df_student, education_level, features_mag, features_bak_spec)
-            
-                result = make_prediction(df_prepared, model, threshold, features)
-            
-                results.append({
-                    'id': student_id,
-                    'probability': result['probability'],
-                    'recommendation': result['recommendation'],
-                    **student_data  
-                })
-        
-        results_df = pd.DataFrame(results)
-        results_df.to_csv('results.csv', index=False)
-        
-        return render_template('prediction.html',
-                           show_results=True,
-                           error=None)
+                subjects[f"{prefix}subject_name[]"].append(str(row.get("subject_name", "")))
+                subjects[f"{prefix}subject_grade[]"].append(str(row.get("subject_grade", "")))
+                subjects[f"{prefix}subject_score[]"].append(str(row.get("subject_score", "")))
+                subjects[f"{prefix}subject_retakes[]"].append(str(row.get("subject_retakes", 0)))
+
+            full_data = {**student_data, **subjects}
+
+            multidict_data = []
+            for key, value in full_data.items():
+                if isinstance(value, list):
+                    for item in value:
+                        multidict_data.append((key, item))
+                else:
+                    multidict_data.append((key, value))
+
+            form_input = ImmutableMultiDict(multidict_data)
+
+            form_data = collect_form_data(form_input, education_level, features_mag, features_bak_spec)
+            processed_data.append({
+                'id_студента': student_id,
+                **form_data
+            })
+
+        return pd.DataFrame(processed_data)
 
     except Exception as e:
         logger.error(f"Ошибка обработки CSV: {e}", exc_info=True)
-        return render_template('prediction.html',
-                           show_results=False,
-                           error=f"Ошибка обработки CSV: {e}")
+        raise
 
 
-def make_prediction(df_prepared, model, threshold, features):
-    probabilities = model.predict_proba(df_prepared[features])[:, 1]
-    recommendations = [
-        'Рекомендован' if prob >= threshold else 'Не рекомендован'
-        for prob in probabilities
-    ]
-    return {
-        'probability': probabilities,
-        'recommendation': recommendations
-    }
+def make_prediction_csv(df: pd.DataFrame, model, threshold: float, features: list):
+    missing = set(features) - set(df.columns)
+    if missing:
+        raise ValueError(f"Отсутствуют обязательные фичи: {missing}")
+
+    if hasattr(model, 'predict_proba'):
+        proba = model.predict_proba(df[features])[:, 1]
+    else:
+        proba = model.predict(df[features])
+
+    result_df = pd.DataFrame({
+        'id': df.index if 'id' not in df.columns else df['id'],
+        'probability': (proba * 100).round(2),
+        'above_threshold': proba >= threshold
+    })
+
+    return result_df
 
 
 @app.route('/download_results')
