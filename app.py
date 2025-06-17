@@ -206,7 +206,28 @@ def make_prediction_csv(df: pd.DataFrame, model, threshold: float, features: lis
 
     return result_df
 
+from flask import send_from_directory
 
+@app.route('/download_example/<education_level>')
+def download_example(education_level):
+    try:
+        if education_level == 'magistr':
+            filename = 'example_magistr.csv'
+        elif education_level == 'bak_spec':
+            filename = 'example_bak_spec.csv'
+        else:
+            return jsonify({'error': 'Invalid education level'}), 400
+
+        return send_from_directory(
+            'static/examples',
+            filename,
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        logger.error(f"Ошибка при скачивании примера CSV: {e}")
+        return jsonify({'error': str(e)}), 500
+    
 @app.route('/download_results')
 def download_results():
     try:

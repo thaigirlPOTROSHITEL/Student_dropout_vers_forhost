@@ -191,4 +191,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    function downloadExample(educationLevel) {
+        window.location.href = `/download_example/${educationLevel}`;
+    }
+
+    document.querySelectorAll('[onclick^="downloadExample"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const educationLevel = this.getAttribute('onclick').match(/downloadExample\('(\w+)'\)/)[1];
+            downloadExample(educationLevel);
+        });
+    });
 });
