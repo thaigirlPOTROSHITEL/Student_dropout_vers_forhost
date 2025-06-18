@@ -23,11 +23,11 @@
             <h1>Сервис прогнозирования отсева студентов</h1>
 
             <div class="tabs">
-                <button class="tab-btn active" data-tab="magistr">Магистратура</button>
-                <button class="tab-btn" data-tab="bak_spec">Бакалавриат/Специалитет</button>
+                <button class="tab-btn {% if active_tab == 'magistr' %}active{% endif %}" data-tab="magistr">Магистратура</button>
+                <button class="tab-btn {% if active_tab == 'bak_spec' %}active{% endif %}" data-tab="bak_spec">Бакалавриат/Специалитет</button>
             </div>
 
-            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form active" id="magistr-form">
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form {% if active_tab == 'magistr' %}active{% endif %}" id="magistr-form">
                 <input type="hidden" name="education_level" value="magistr">
                 <div class="form-section">
                     <h2>Основные данные</h2>
@@ -190,7 +190,7 @@
                 </div>
             </form>
 
-            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form" id="bak_spec-form">
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form {% if active_tab == 'bak_spec' %}active{% endif %}" id="bak_spec-form">
                 <input type="hidden" name="education_level" value="bak_spec">
 
                 <div class="form-section">
@@ -410,5 +410,14 @@
     </main>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeTab = "{{ active_tab if active_tab is defined else 'magistr' }}";
+        const tabBtn = document.querySelector(`.tab-btn[data-tab="${activeTab}"]`);
+        if (tabBtn) {
+            tabBtn.click();
+    }
+});
+</script>
 </body>
 </html>

@@ -122,10 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-    const firstTab = document.querySelector('.tab-btn');
-    if (firstTab) {
-        firstTab.click();
-    }
+   
 
     const forms = document.querySelectorAll('.prediction-form');
     forms.forEach(form => {
