@@ -119,11 +119,10 @@ def predict():
             result = make_prediction(df_prepared, model, threshold, features)
 
             return render_template('prediction.html',
-                                   show_results=True,
-                                   probability=result['probability'],
-                                   recommendation=result['recommendation'],
-                                   error=None)
-
+                      active_tab=education_level, 
+                      show_results=True,
+                      probability=result['probability'],
+                      recommendation=result['recommendation'])
         except Exception as e:
             logger.error(f"Непредвиденная ошибка: {e}")
             return render_template('prediction.html',
