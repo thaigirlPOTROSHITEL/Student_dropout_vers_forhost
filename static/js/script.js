@@ -10,9 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.prediction-form').forEach(f => f.classList.remove('active'));
-            
+
             this.classList.add('active');
-            
+
             const formId = `${this.dataset.tab}-form`;
             document.getElementById(formId).classList.add('active');
         });
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('m_add-subject').addEventListener('click', () => {
         addSubject('m', MAGISTR_SUBJECTS);
     });
-    
+
     document.getElementById('b_add_subject').addEventListener('click', () => {
         addSubject('b', BAK_SPEC_SUBJECTS);
     });
@@ -29,44 +29,78 @@ document.addEventListener('DOMContentLoaded', function() {
     function addSubject(prefix, subjectsList) {
         const container = document.getElementById(`${prefix}_subjects_container`);
         const subjectId = Date.now();
-        
+
         const subjectDiv = document.createElement('div');
         subjectDiv.className = 'subject-entry';
         subjectDiv.dataset.id = subjectId;
-        subjectDiv.innerHTML = `
-            <div class="subject-fields">
-                <div class="form-group">
-                    <label>Дисциплина:</label>
-                    <select name="${prefix}_subject_name[]" required>
-                        ${subjectsList.map(s => `<option value="${s}">${s}</option>`).join('')}
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Оценка:</label>
-                    <select name="${prefix}_subject_grade[]" required>
-                        ${GRADES.map(g => `<option value="${g}">${g}</option>`).join('')}
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Баллы (0-100):</label>
-                    <input type="number" name="${prefix}_subject_score[]" min="0" max="100" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Пересдачи (0-50):</label>
-                    <input type="number" name="${prefix}_subject_retakes[]" min="0" max="50" required>
-                </div>
 
-                <div class="form-group">
-                    <label>Долги (0-50):</label>
-                    <input type="number" name="${prefix}_subject_debts[]" min="0" max="50" required>
-                </div>
-            </div>
-            <button type="button" class="btn-remove-subject" data-id="${subjectId}">×</button>
-        `;
-        
+        const subjectFields = document.createElement('div');
+        subjectFields.className = 'subject-fields';
+
+        const createFormGroup = (labelText, elementType, name, options = null) => {
+            const group = document.createElement('div');
+            group.className = 'form-group';
+
+            const label = document.createElement('label');
+            label.textContent = labelText;
+            group.appendChild(label);
+
+            let element;
+            if (elementType === 'select') {
+                element = document.createElement('select');
+                element.name = name;
+                element.required = true;
+                element.className = 'subject-select'; // Добавляем класс для стилизации
+
+                if (options) {
+                    options.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        element.appendChild(optionElement);
+                    });
+                }
+            } else {
+                element = document.createElement('input');
+                element.type = elementType;
+                element.name = name;
+                element.required = true;
+
+                if (elementType === 'number') {
+                    element.min = name.includes('score') ? '0' : '0';
+                    element.max = name.includes('score') ? '100' : '50';
+                }
+            }
+
+            group.appendChild(element);
+            return group;
+        };
+
+        subjectFields.appendChild(
+            createFormGroup('Дисциплина:', 'select', `${prefix}_subject_name[]`, subjectsList)
+        );
+
+        subjectFields.appendChild(
+            createFormGroup('Оценка:', 'select', `${prefix}_subject_grade[]`, GRADES)
+        );
+
+        subjectFields.appendChild(
+            createFormGroup('Баллы (0-100):', 'number', `${prefix}_subject_score[]`)
+        );
+
+        subjectFields.appendChild(
+            createFormGroup('Пересдачи (0-50):', 'number', `${prefix}_subject_retakes[]`)
+        );
+
+        subjectDiv.appendChild(subjectFields);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-remove-subject';
+        removeBtn.dataset.id = subjectId;
+        removeBtn.textContent = '×';
+        subjectDiv.appendChild(removeBtn);
+
         container.appendChild(subjectDiv);
     }
 
@@ -79,11 +113,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function() {
+        const fileInputs = this.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            input.value = '';
+        });
+    });
+});
 
-    const firstTab = document.querySelector('.tab-btn');
-    if (firstTab) {
-        firstTab.click();
-    }
+   
 
     const forms = document.querySelectorAll('.prediction-form');
     forms.forEach(form => {
@@ -98,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateForm(form) {
         let isValid = true;
         const inputs = form.querySelectorAll('input[required], select[required]');
-        
+
         inputs.forEach(input => {
             if (!input.value) {
                 markInvalid(input, 'Это поле обязательно для заполнения');
@@ -113,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 markValid(input);
             }
         });
-        
+
         return isValid;
     }
 
@@ -137,24 +176,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Обработка загрузки CSV
-    document.getElementById('b_csv_upload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const contents = e.target.result;
-                // Здесь можно добавить обработку CSV файла
-                console.log('Загружен CSV файл:', file.name);
-            };
-            reader.readAsText(file);
-        }
+    const csvUploads = document.querySelectorAll('input[type="file"]');
+    csvUploads.forEach(upload => {
+        upload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const form = this.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
     });
+    function downloadExample(educationLevel) {
+        window.location.href = `/download_example/${educationLevel}`;
+    }
 
-    // Обработка скачивания примера CSV
-    document.getElementById('b_download_sample').addEventListener('click', function() {
-        // Здесь можно добавить код для скачивания примера CSV
-        console.log('Запрошен пример CSV файла');
-        alert('Пример CSV файла будет скачан');
+    document.querySelectorAll('[onclick^="downloadExample"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const educationLevel = this.getAttribute('onclick').match(/downloadExample\('(\w+)'\)/)[1];
+            downloadExample(educationLevel);
+        });
     });
 });

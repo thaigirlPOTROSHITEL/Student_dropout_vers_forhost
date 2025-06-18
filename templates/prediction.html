@@ -23,11 +23,11 @@
             <h1>Сервис прогнозирования отсева студентов</h1>
 
             <div class="tabs">
-                <button class="tab-btn active" data-tab="magistr">Магистратура</button>
-                <button class="tab-btn" data-tab="bak_spec">Бакалавриат/Специалитет</button>
+                <button class="tab-btn {% if active_tab == 'magistr' %}active{% endif %}" data-tab="magistr">Магистратура</button>
+                <button class="tab-btn {% if active_tab == 'bak_spec' %}active{% endif %}" data-tab="bak_spec">Бакалавриат/Специалитет</button>
             </div>
 
-            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form active" id="magistr-form">
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form {% if active_tab == 'magistr' %}active{% endif %}" id="magistr-form">
                 <input type="hidden" name="education_level" value="magistr">
                 <div class="form-section">
                     <h2>Основные данные</h2>
@@ -184,10 +184,13 @@
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Прогнозировать</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('m_csv_upload').click()" tooltip data-tooltip="Результат скачается автоматически">Загрузить CSV</button>
+                    <input type="file" id="m_csv_upload" name="file" accept=".csv" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="downloadExample('magistr')">Скачать пример</button>
                 </div>
             </form>
 
-            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form" id="bak_spec-form">
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('predict') }}" class="prediction-form {% if active_tab == 'bak_spec' %}active{% endif %}" id="bak_spec-form">
                 <input type="hidden" name="education_level" value="bak_spec">
 
                 <div class="form-section">
@@ -382,10 +385,9 @@
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Прогнозировать</button>
-                    <button type="button" class="btn btn-secondary" id="b_download_sample">Скачать пример CSV</button>
-                    <label class="btn btn-secondary">
-                        Загрузить CSV <input type="file" id="b_csv_upload" name="file" accept=".csv" style="display: none;">
-                    </label>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('b_csv_upload').click()" tooltip data-tooltip="Результат скачается автоматически">Загрузить CSV</button>
+                    <input type="file" id="b_csv_upload" name="file" accept=".csv" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="downloadExample('bak_spec')">Скачать пример</button>
                 </div>
             </form>
 
@@ -402,14 +404,20 @@
                     <h3>Вероятность отсева: <span class="probability">{{ probability }}%</span></h3>
                     <p class="recommendation">{{ recommendation }}</p>
                 </div>
-                <div class="results-actions">
-                    <a href="{{ url_for('download_results') }}" class="btn btn-secondary">Скачать полный отчет</a>
-                </div>
             </div>
             {% endif %}
         </section>
     </main>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeTab = "{{ active_tab if active_tab is defined else 'magistr' }}";
+        const tabBtn = document.querySelector(`.tab-btn[data-tab="${activeTab}"]`);
+        if (tabBtn) {
+            tabBtn.click();
+    }
+});
+</script>
 </body>
 </html>
